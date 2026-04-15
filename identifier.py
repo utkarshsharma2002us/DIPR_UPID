@@ -2,24 +2,27 @@ import logging
 import os
 import shutil
 import pdfplumber
+import re
 
 SAMVAD_KEYWORDS = [
     "SOCIETY FOR ADVANCED MANAGEMENT OF COMMUNICATION",
     "SAMVAD",
-    "MD -Cum- CEO"
+    "MD -CUM- CEO",
+    "VALUE ADDED DISSEMINATION OF INFORMATION ADVERTISEMENT RELEASE"
 ]
 
 CBC_KEYWORDS = [
     "CENTRAL BUREAU OF COMMUNICATION",
-    "Government of India",
-    "RO Code",
+    "GOVERNMENT OF INDIA",
+    "RO CODE",
     "CBC"
 ]
 
 DIPR_KEYWORDS = [
-    "DIRECTORATE OF INFORMATION,PUBLIC RELATIONS AND LANGUAGES",
-    "Directorate of Information",
-    "Public Relations and Languages",  
+    "DIRECTORATE OF INFORMATION, PUBLIC RELATIONS AND LANGUAGES DEPARTMENT",
+    "DIRECTORATE OF INFORMATION, PUBLIC RELATIONS AND LANGUAGES",
+    "DIRECTORATE OF INFORMATION",
+    "PUBLIC RELATIONS AND LANGUAGES"
 ]
 
 def classify_pdf(pdf_path):
@@ -29,14 +32,24 @@ def classify_pdf(pdf_path):
             for page in pdf.pages:
                 text += page.extract_text() or ""
 
-        text = text.upper()
+        text_upper = text.upper().replace('\n', ' ').replace('\r', ' ')
+        
+        text_upper = re.sub(r'\s+', ' ', text_upper)
+        #print(f"--- Extracted text from {pdf_path} ---\n{text_upper}\n--- END ---")
 
-        if any(keyword.upper() in text for keyword in SAMVAD_KEYWORDS):
-            return "SAMVAD"
-        elif any(keyword.upper() in text for keyword in CBC_KEYWORDS):
-            return "DAVP"
-        elif any(keyword.upper() in text for keyword in DIPR_KEYWORDS):
+        def keyword_in_text(keywords):
+            for kw in keywords:
+                kw_norm = re.sub(r'\s+', ' ', kw.upper())
+                if kw_norm in text_upper:
+                    return True
+            return False
+
+        if keyword_in_text(DIPR_KEYWORDS):
             return "DIPR"
+        elif keyword_in_text(CBC_KEYWORDS):
+            return "DAVP"
+        elif keyword_in_text(SAMVAD_KEYWORDS):
+            return "SAMVAD"
         else:
             return "Others"
 
@@ -45,18 +58,6 @@ def classify_pdf(pdf_path):
         return "Others"
 
 
-def classify_by_filename(filename):
-    name = filename.upper()
-
-    if "CENTRAL BUREAU OF COMMUNICATION" in name or "CBC" in name:
-        return "DAVP"
-
-    elif "-" in name and "SIZE" in name:
-        return "SAMVAD"
-    elif "DIRECTORATE OF INFORMATION,PUBLIC RELATIONS AND LANGUAGES" in name or "DIRECTORATE OF INFORMATION, PUBLIC RELATIONS AND LANGUAGES" in name:
-        return "DIPR"
-    else:
-        return "Others"
 
 def classify_RO_catogory(SOURCE_FOLDER):
     for filename in os.listdir(SOURCE_FOLDER):
@@ -66,7 +67,7 @@ def classify_RO_catogory(SOURCE_FOLDER):
             
             if category == "Others":
                 logging.info(f"Classified as Others so classifying by checking the Content of file name {filename}")
-                category = classify_by_filename(filename)
+                category = classify_pdf(file_path)
                 logging.info(f"Classified as {category} based on filename: {filename}")
                 if category == "Others":
                      logging.warning(f"Could not classify {filename} based on content or filename. Defaulting to Others.")   
