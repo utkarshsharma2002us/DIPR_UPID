@@ -16,6 +16,12 @@ CBC_KEYWORDS = [
     "CBC"
 ]
 
+DIPR_KEYWORDS = [
+    "DIRECTORATE OF INFORMATION,PUBLIC RELATIONS AND LANGUAGES",
+    "Directorate of Information",
+    "Public Relations and Languages",  
+]
+
 def classify_pdf(pdf_path):
     try:
         with pdfplumber.open(pdf_path) as pdf:
@@ -27,10 +33,10 @@ def classify_pdf(pdf_path):
 
         if any(keyword.upper() in text for keyword in SAMVAD_KEYWORDS):
             return "SAMVAD"
-
         elif any(keyword.upper() in text for keyword in CBC_KEYWORDS):
             return "DAVP"
-
+        elif any(keyword.upper() in text for keyword in DIPR_KEYWORDS):
+            return "DIPR"
         else:
             return "Others"
 
@@ -47,7 +53,8 @@ def classify_by_filename(filename):
 
     elif "-" in name and "SIZE" in name:
         return "SAMVAD"
-
+    elif "DIRECTORATE OF INFORMATION,PUBLIC RELATIONS AND LANGUAGES" in name or "DIRECTORATE OF INFORMATION, PUBLIC RELATIONS AND LANGUAGES" in name:
+        return "DIPR"
     else:
         return "Others"
 
