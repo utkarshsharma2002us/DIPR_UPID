@@ -1,0 +1,4 @@
+It should have the following files:
+- .env file with API key
+- output.json file
+- Upid_input folder that contains UPID PDFs
